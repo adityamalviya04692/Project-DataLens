@@ -50,7 +50,7 @@ const csvCell = (v) => {
   return /[",\n]|^\s|\s$/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
 };
 
-const header = ['order_id', 'order_date', 'customer_id', 'city', 'category', 'quantity', 'unit_price', 'discount_pct', 'payment_method', 'delivery_days', 'is_returned', 'currency'];
+const header = ['order_id', 'order_date', 'customer_id', 'city', 'category', 'quantity', 'unit_price', 'discount_pct', 'shipping_cost', 'rating', 'payment_method', 'delivery_days', 'is_returned', 'currency'];
 const rows = [];
 
 for (let i = 0; i < ROWS; i++) {
@@ -68,6 +68,9 @@ for (let i = 0; i < ROWS; i++) {
   price = Math.round(price * 100) / 100;
 
   const discount = rand() < 0.08 ? null : weighted([[0, 40], [5, 25], [10, 20], [15, 10], [25, 5]]);
+  // Shipping grows with price and quantity (a real relationship for the correlation insights to find).
+  const shipping = Math.max(0, 30 + 0.03 * price + 8 * Math.abs(quantity) + gaussian() * 15);
+  const rating = rand() < 0.1 ? null : weighted([[1, 6], [2, 8], [3, 18], [4, 34], [5, 34]]);
   const payment = weighted(PAYMENTS);
   const delivery = rand() < 0.03 ? 'N/A' : String(1 + Math.floor(rand() * (payment === 'COD' ? 10 : 7)));
   const returned = rand() < (category === 'Fashion' ? 0.18 : 0.06);
@@ -81,6 +84,8 @@ for (let i = 0; i < ROWS; i++) {
     quantity,
     price.toFixed(2),
     discount,
+    shipping.toFixed(2),
+    rating,
     payment,
     delivery,
     returned,

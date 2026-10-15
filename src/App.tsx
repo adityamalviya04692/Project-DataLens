@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
 import { getDb, loadBytes } from './lib/duckdb';
+import { strongestContinuousPair } from './lib/charts';
 import { profileTable } from './lib/profile';
+import { buildInsights, type Insight, type InsightExtras } from './lib/insights';
+import { loadExtras } from './lib/insightsData';
 import { assessQuality } from './lib/quality';
 import { buildHtmlReport } from './lib/report';
 import { baseName, downloadFile, formatBytes } from './lib/download';
@@ -18,6 +21,8 @@ export interface Dataset {
   loadMs: number;
   profile: DatasetProfile;
   quality: QualityReport;
+  extras: InsightExtras;
+  insights: Insight[];
 }
 
 type Phase = { kind: 'idle' } | { kind: 'loading'; message: string } | { kind: 'ready' } | { kind: 'error'; message: string };
@@ -31,6 +36,7 @@ const TABS = [
 ] as const;
 type TabId = (typeof TABS)[number]['id'];
 
+/** Bundled demo file, served from public/sample/. */
 const SAMPLE_FILE = 'orders.csv';
 
 export default function App() {
@@ -56,7 +62,10 @@ export default function App() {
       const loadMs = performance.now() - t0;
       setPhase({ kind: 'loading', message: 'Profiling columns and running quality checks…' });
       const profile = await profileTable('data');
-      setDataset({ fileName, sizeBytes, loadMs, profile, quality: assessQuality(profile) });
+      const quality = assessQuality(profile);
+      setPhase({ kind: 'loading', message: 'Finding insights…' });
+      const extras = await loadExtras(profile);
+      setDataset({ fileName, sizeBytes, loadMs, profile, quality, extras, insights: buildInsights(profile, quality, extras) });
       setTab('overview');
       setPhase({ kind: 'ready' });
     } catch (err) {
@@ -80,7 +89,7 @@ export default function App() {
 
   const downloadReport = () => {
     if (!dataset) return;
-    const html = buildHtmlReport(dataset.fileName, dataset.profile, dataset.quality);
+    const html = buildHtmlReport(dataset.fileName, dataset.profile, dataset.quality, new Date(), dataset.insights);
     downloadFile(html, `${baseName(dataset.fileName)}_quality_report.html`, 'text/html');
   };
 
@@ -111,8 +120,8 @@ export default function App() {
           <section className="hero">
             <h1>Drop a dataset. Get answers in seconds.</h1>
             <p>
-              Instant profiling, a data quality score, auto-generated charts, a SQL console and one-click cleaning,
-              powered by DuckDB running inside your browser.
+              Instant profiling, a data quality score, plain-English insights, a dozen auto-generated charts, a SQL
+              console and one-click cleaning, powered by DuckDB running inside your browser.
             </p>
           </section>
           <Dropzone onFile={onFile} onSample={onSample} busy={phase.kind === 'loading'} />
@@ -129,7 +138,8 @@ export default function App() {
           <ul className="features">
             <li><b>Profile</b><span>Types, nulls, cardinality, quartiles and outliers for every column.</span></li>
             <li><b>Score</b><span>Completeness, uniqueness, validity and consistency, rolled into a 0–100 score.</span></li>
-            <li><b>Visualise</b><span>Charts chosen automatically from the column types.</span></li>
+            <li><b>Insights</b><span>Skew, seasonality, correlations and dominant values, in plain English.</span></li>
+            <li><b>Visualise</b><span>Trends, box plots, scatter and stacked charts chosen from the column types.</span></li>
             <li><b>Clean</b><span>Dedupe, trim, fix types, then export to Parquet or CSV.</span></li>
           </ul>
         </main>
@@ -164,7 +174,12 @@ export default function App() {
           <div className="panel">
             {tab === 'overview' && <Overview dataset={dataset} />}
             {tab === 'columns' && <ColumnsTable profile={dataset.profile} quality={dataset.quality} />}
-            {tab === 'charts' && <ChartsPanel profile={dataset.profile} />}
+            {tab === 'charts' && (
+              <ChartsPanel
+                profile={dataset.profile}
+                pair={strongestContinuousPair(dataset.profile, dataset.extras.correlations)}
+              />
+            )}
             {tab === 'sql' && <SqlConsole profile={dataset.profile} />}
             {tab === 'clean' && <CleanPanel dataset={dataset} />}
           </div>

@@ -1,14 +1,19 @@
+import type { Insight } from './insights';
 import type { DatasetProfile, QualityReport } from './types';
 
 export function escapeHtml(s: string): string {
   return s.replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[ch]!);
 }
 
+/** Ratio 0..1 → "12.3%". */
 const pct = (x: number) => `${(x * 100).toFixed(1)}%`;
 
 /** A self-contained HTML data quality report the user can save or share. */
-export function buildHtmlReport(fileName: string, p: DatasetProfile, q: QualityReport, generatedAt = new Date()): string {
+export function buildHtmlReport(fileName: string, p: DatasetProfile, q: QualityReport, generatedAt = new Date(), insights: Insight[] = []): string {
   const e = escapeHtml;
+  const insightList = insights.length
+    ? `<h2>Key insights</h2><ul class="insights">${insights.map((i) => `<li class="${i.tone}"><b>${e(i.title)}</b><br>${e(i.detail)}</li>`).join('')}</ul>`
+    : '';
   const dims = Object.entries(q.dimensions)
     .map(([k, v]) => `<div class="dim"><span>${e(k)}</span><b>${pct(v)}</b></div>`)
     .join('');
@@ -39,12 +44,16 @@ main{max-width:960px;margin:0 auto}h1{margin:0 0 4px;font-size:24px}p.meta{color
 .dim{background:#fff;border:1px solid #e3e4ec;border-radius:10px;padding:12px;display:flex;justify-content:space-between;text-transform:capitalize}
 table{width:100%;border-collapse:collapse;background:#fff;border:1px solid #e3e4ec;border-radius:10px;overflow:hidden;margin-bottom:24px;font-size:14px}
 th,td{text-align:left;padding:8px 10px;border-bottom:1px solid #eee;vertical-align:top}th{background:#f1f2f7}
+.insights{list-style:none;padding:0;margin:0 0 24px;display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:8px}
+.insights li{background:#fff;border:1px solid #e3e4ec;border-left:4px solid #4f46e5;border-radius:10px;padding:10px 12px;font-size:14px;color:#5b6070}
+.insights li.warn{border-left-color:#d97706}.insights li.good{border-left-color:#15803d}.insights b{color:#1f2330}
 .sev{font-size:12px;font-weight:600;padding:2px 8px;border-radius:99px}.error{background:#fde2e2;color:#a61b1b}.warning{background:#fdf0d5;color:#8a5300}.info{background:#e3ecfd;color:#1e4fa8}
 </style></head><body><main>
 <h1>Data quality report</h1>
 <p class="meta">${e(fileName)} · ${p.rows.toLocaleString('en-US')} rows × ${p.columns.length} columns · generated ${e(generatedAt.toISOString().slice(0, 16).replace('T', ' '))} UTC by DataLens</p>
 <div class="score"><b>${q.score.toFixed(1)}</b><span>/ 100</span><span class="grade">Grade ${q.grade}</span></div>
 <div class="dims">${dims}</div>
+${insightList}
 <h2>Issues (${q.issues.length})</h2>
 <table><thead><tr><th>Severity</th><th>Column</th><th>Check</th><th>Detail</th></tr></thead><tbody>${issues}</tbody></table>
 <h2>Column profile</h2>

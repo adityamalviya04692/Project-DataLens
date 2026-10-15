@@ -1,11 +1,25 @@
 import { useEffect, useRef, useState } from 'react';
 import * as echarts from 'echarts/core';
-import { BarChart, HeatmapChart, LineChart } from 'echarts/charts';
-import { GridComponent, TooltipComponent, VisualMapComponent } from 'echarts/components';
+import { BarChart, BoxplotChart, HeatmapChart, LineChart, PieChart, RadarChart, ScatterChart } from 'echarts/charts';
+import { GridComponent, LegendComponent, RadarComponent, TooltipComponent, VisualMapComponent } from 'echarts/components';
 import { CanvasRenderer } from 'echarts/renderers';
 import type { EChartsCoreOption } from 'echarts/core';
 
-echarts.use([BarChart, LineChart, HeatmapChart, GridComponent, TooltipComponent, VisualMapComponent, CanvasRenderer]);
+echarts.use([
+  BarChart,
+  BoxplotChart,
+  HeatmapChart,
+  LineChart,
+  PieChart,
+  RadarChart,
+  ScatterChart,
+  GridComponent,
+  LegendComponent,
+  RadarComponent,
+  TooltipComponent,
+  VisualMapComponent,
+  CanvasRenderer,
+]);
 
 export interface ThemeColors {
   accent: string;
@@ -16,6 +30,11 @@ export interface ThemeColors {
   surface: string;
   pos: string;
   neg: string;
+  good: string;
+  ok: string;
+  bad: string;
+  /** Categorical series colours, in order. */
+  palette: string[];
 }
 
 export function readTheme(): ThemeColors {
@@ -30,6 +49,10 @@ export function readTheme(): ThemeColors {
     surface: v('--surface'),
     pos: v('--chart-pos'),
     neg: v('--chart-neg'),
+    good: v('--good'),
+    ok: v('--ok'),
+    bad: v('--bad'),
+    palette: [1, 2, 3, 4, 5, 6, 7].map((i) => v(`--c${i}`)),
   };
 }
 
