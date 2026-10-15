@@ -6,11 +6,23 @@
 
 ![CI](https://github.com/adityamalviya04692/datalens/actions/workflows/deploy.yml/badge.svg)
 
-![Key insights and overview visuals](docs/insights.jpg)
+## Interface preview
 
-![Correlation matrix and scatter plot](docs/charts.jpg)
+### Private, browser-first workspace
 
-![Column explorer](docs/columns.jpg)
+[![DataLens landing page with local file upload and sample dataset controls](docs/landing.jpg)](https://adityamalviya04692.github.io/datalens/)
+
+### Quality overview and automatic insights
+
+![Data quality score, quality dimensions and automatically generated insights](docs/insights.jpg)
+
+### Column-level profiling
+
+![Column profiler with statistics, issue flags and value distribution](docs/columns.jpg)
+
+### Automatic visualizations
+
+![Visualization workspace showing a generated time-series chart and takeaway](docs/charts.jpg)
 
 ---
 
@@ -29,7 +41,13 @@
 | **Clean** | Dedupe, trim, blank → NULL, fix types, drop empty columns. Generates one reproducible SQL statement, re-profiles the result, and shows the before/after score. |
 | **Export** | Cleaned data as Parquet (ZSTD) or CSV, the cleaning SQL as a `.sql` file, and a self-contained HTML quality report. |
 
-![SQL console](docs/sql.jpg)
+### SQL console
+
+![DuckDB SQL console with reusable query presets](docs/sql.jpg)
+
+### Reproducible cleaning
+
+![Cleaning rules and the generated reproducible SQL transformation](docs/clean.jpg)
 
 ## Architecture
 
