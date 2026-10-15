@@ -73,13 +73,24 @@ export default function EChart({ option, height = 280 }: { option: EChartsCoreOp
   useEffect(() => {
     if (!el.current) return;
     const chart = echarts.init(el.current, undefined, { renderer: 'canvas' });
-    chart.setOption(option);
+    const motion = matchMedia('(prefers-reduced-motion: reduce)');
+    const render = () => chart.setOption({
+      ...option,
+      animation: !motion.matches,
+      animationDuration: 280,
+      animationDurationUpdate: 180,
+      animationEasing: 'cubicOut',
+      animationEasingUpdate: 'cubicOut',
+    });
+    render();
+    motion.addEventListener('change', render);
     const ro = new ResizeObserver(() => chart.resize());
     ro.observe(el.current);
     return () => {
       ro.disconnect();
+      motion.removeEventListener('change', render);
       chart.dispose();
     };
   }, [option]);
-  return <div ref={el} style={{ width: '100%', height }} />;
+  return <div className="chart-canvas" ref={el} style={{ width: '100%', height }} />;
 }

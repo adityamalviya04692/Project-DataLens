@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { getDb, loadBytes } from './lib/duckdb';
 import { strongestContinuousPair } from './lib/charts';
 import { profileTable } from './lib/profile';
@@ -54,6 +54,22 @@ export default function App() {
   const [phase, setPhase] = useState<Phase>({ kind: 'idle' });
   const [dataset, setDataset] = useState<Dataset | null>(null);
   const [tab, setTab] = useState<TabId>('overview');
+  const panel = useRef<HTMLDivElement>(null);
+  const panelMotion = useRef<Animation | null>(null);
+
+  useEffect(() => () => panelMotion.current?.cancel(), []);
+
+  function selectTab(next: TabId, pointerInitiated: boolean) {
+    if (next === tab) return;
+    panelMotion.current?.cancel();
+    setTab(next);
+    if (pointerInitiated && panel.current && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      panelMotion.current = panel.current.animate(
+        [{ opacity: 0.6, transform: 'translateY(4px)' }, { opacity: 1, transform: 'translateY(0)' }],
+        { duration: 180, easing: getComputedStyle(document.documentElement).getPropertyValue('--ease-out').trim() },
+      );
+    }
+  }
 
   // Warm up the engine while the user is choosing a file.
   useEffect(() => {
@@ -212,7 +228,7 @@ export default function App() {
 
           <nav className="tabs" role="tablist">
             {TABS.map((t) => (
-              <button key={t.id} role="tab" aria-selected={tab === t.id} className={tab === t.id ? 'active' : ''} onClick={() => setTab(t.id)}>
+              <button key={t.id} role="tab" aria-selected={tab === t.id} className={tab === t.id ? 'active' : ''} onClick={(event) => selectTab(t.id, event.detail > 0)}>
                 <span className={`tab-icon ${t.icon}`} aria-hidden="true" />
                 {t.label}
                 {t.id === 'overview' && dataset.quality.issues.length > 0 && <span className="count">{dataset.quality.issues.length}</span>}
@@ -220,7 +236,7 @@ export default function App() {
             ))}
           </nav>
 
-          <div className="panel">
+          <div className="panel" ref={panel}>
             {tab === 'overview' && <Overview dataset={dataset} />}
             {tab === 'columns' && <ColumnsTable profile={dataset.profile} quality={dataset.quality} />}
             {tab === 'charts' && (

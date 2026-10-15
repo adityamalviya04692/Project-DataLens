@@ -299,8 +299,9 @@ code { padding: 1px 4px; color: var(--accent); background: #000; font: 600 .86em
 .section-head p { font: 500 11px/1.4 var(--mono); text-transform: uppercase; }
 .charts-grid { display: grid; grid-template-columns: repeat(auto-fill,minmax(min(100%,440px),1fr)); gap: 16px; }
 .chart-card.wide { grid-column: 1/-1; }
-.chart-skeleton { height: 260px; border: 2px solid #000; background: linear-gradient(90deg,#eee,var(--accent),#eee); background-size: 200% 100%; animation: shimmer 1.1s linear infinite; }
-@keyframes shimmer { to { background-position: -200% 0; } }
+.chart-skeleton { height: 260px; border: 2px solid #000; background: #eee; overflow: hidden; position: relative; }
+.chart-skeleton::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg,transparent,var(--accent-soft),transparent); animation: shimmer 1.1s linear infinite; }
+@keyframes shimmer { from { transform: translateX(-100%); } to { transform: translateX(100%); } }
 .sql-peek summary { cursor: pointer; font: 700 10px/1 var(--display); letter-spacing: .06em; text-transform: uppercase; }
 .sql-peek pre { max-width: 100%; margin: 8px 0 0; padding: 12px; color: var(--accent); background: #111; border: 2px solid #000; white-space: pre-wrap; word-break: break-word; font: 10px/1.6 var(--mono); }
 .sql-peek:not(.open-block) { max-width: 60%; }
@@ -389,6 +390,24 @@ code { padding: 1px 4px; color: var(--accent); background: #000; font: 600 .86em
   .sql-peek:not(.open-block) { max-width: 100%; }
   .options { grid-template-columns: 1fr; }
   .footer { justify-content: center; text-align: center; }
+}
+/* Short entrances bridge loading states without moving data once it is readable. */
+@keyframes surface-enter {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes chart-enter { from { opacity: 0; } to { opacity: 1; } }
+@keyframes bar-enter { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@media (prefers-reduced-motion:no-preference) {
+  .landing > *, .workspace > .summary { animation: surface-enter 280ms var(--ease-out) backwards; }
+  .landing > :nth-child(2) { animation-delay: 40ms; }
+  .landing > :nth-child(3) { animation-delay: 80ms; }
+  .landing > :nth-child(n+4) { animation-delay: 120ms; }
+  .chart-canvas, .takeaway { animation: chart-enter 200ms var(--ease-out); }
+  .bar-fill { transform-origin: left; animation: bar-enter 280ms var(--ease-out); transition: none; }
+  .dim:nth-child(2) .bar-fill { animation-delay: 40ms; animation-fill-mode: backwards; }
+  .dim:nth-child(3) .bar-fill { animation-delay: 80ms; animation-fill-mode: backwards; }
+  .dim:nth-child(4) .bar-fill { animation-delay: 120ms; animation-fill-mode: backwards; }
 }
 @media (prefers-reduced-motion:reduce) {
   html { scroll-behavior: auto; }
